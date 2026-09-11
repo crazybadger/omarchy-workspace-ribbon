@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "crazybadger.workspace-ribbon",
+  "name": "Workspace Ribbon",
+  "version": "1.0.0",
+  "author": "crazybadger",
+  "license": "MIT",
+  "description": "macOS Mission-Control-style strip of workspaces across the top of the screen. Bind a gesture or key to toggle it; click a tile to jump to that workspace.",
+  "kinds": [
+    "overlay"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "overlay": "Ribbon.qml"
+  }
+}
