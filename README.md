@@ -1,5 +1,7 @@
 # Workspace Ribbon
 
+![Workspace Ribbon in use](preview.png)
+
 A macOS Mission-Control-style strip of workspaces across the top of the
 screen. **Swipe 3 fingers up on your touchpad** to open it, **swipe down**
 to dismiss — mirrors Mission Control's gesture exactly. Click a tile, or
