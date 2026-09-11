@@ -5,7 +5,7 @@
   "version": "1.0.0",
   "author": "crazybadger",
   "license": "MIT",
-  "description": "macOS Mission-Control-style strip of workspaces across the top of the screen. Bind a gesture or key to toggle it; click a tile to jump to that workspace.",
+  "description": "Miss macOS Mission Control? Swipe 3 fingers up on your touchpad for a clickable strip of every workspace across the top of the screen, with live app icons per workspace; swipe down to dismiss. Click a tile (or press its number) to jump straight there. Works with a keybind too, if you'd rather not use gestures.",
   "kinds": [
     "overlay"
   ],

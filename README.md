@@ -1,11 +1,15 @@
 # Workspace Ribbon
 
 A macOS Mission-Control-style strip of workspaces across the top of the
-screen — deliberately just the "Spaces bar" part, not the window-tiling part.
+screen. **Swipe 3 fingers up on your touchpad** to open it, **swipe down**
+to dismiss — mirrors Mission Control's gesture exactly. Click a tile, or
+press its number, to jump to that workspace.
+
+Deliberately just the "Spaces bar" part, not the window-tiling part —
 Hyprland already manages windows within a workspace better than macOS does,
 so this doesn't try to preview or tile window contents; it just shows which
-workspaces exist, what's roughly on each (by app icon), and lets you click
-to jump.
+workspaces exist, what's roughly on each (by real app icons, not a generic
+placeholder), and lets you jump.
 
 ## Install
 
