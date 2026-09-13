@@ -91,6 +91,32 @@ Item {
 
   Component.onCompleted: iconIndexScan.running = true
 
+  // The index above is a snapshot from whenever this scan last ran — for a
+  // keepLoaded overlay that's shell-start, once, forever. An icon installed
+  // afterwards (e.g. a webapp added via `omarchy webapp add` after login)
+  // then shows the generic fallback until `omarchy restart shell`. Rather
+  // than require that, rescan on demand: whenever an icon genuinely fails to
+  // resolve, ask for a rescan. Cooldown-gated (not per-name-gated) so it
+  // stays cheap and simple — worst case, an app with truly no icon anywhere
+  // costs one extra background `find` every `_rescanCooldownMs` while it's
+  // on screen, which is negligible next to the win of new icons just
+  // appearing next time the ribbon (re-)renders that tile.
+  readonly property int _rescanCooldownMs: 8000
+  property bool _rescanCoolingDown: false
+
+  Timer {
+    id: rescanCooldown
+    interval: root._rescanCooldownMs
+    onTriggered: root._rescanCoolingDown = false
+  }
+
+  function requestIconRescan() {
+    if (root._rescanCoolingDown || iconIndexScan.running) return
+    root._rescanCoolingDown = true
+    rescanCooldown.restart()
+    iconIndexScan.running = true
+  }
+
   // Hyprland's own per-workspace toplevel objects (Hyprland.workspaces.values
   // [i].toplevels.values[j]) only carry title/address/workspace — NOT the WM
   // class, despite `hyprctl clients -j` calling it "class". The class/appId
@@ -174,7 +200,14 @@ Item {
       var deIcon = root.desktopIconForTitle(toplevel.title)
       if (deIcon.length > 0) found = root.lookupIconName(deIcon)
     }
-    return found.length > 0 ? found : Quickshell.iconPath("application-x-executable", true)
+    if (found.length === 0) {
+      // Falling through to the generic icon — ask for a rescan in case this
+      // one's just new since our last index (see requestIconRescan above).
+      // Deferred: don't mutate Process state mid-binding-evaluation.
+      Qt.callLater(root.requestIconRescan)
+      return Quickshell.iconPath("application-x-executable", true)
+    }
+    return found
   }
 
   // ------------------------------------------------------------ workspaces
