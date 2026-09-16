@@ -13,6 +13,12 @@ so this doesn't try to preview or tile window contents; it just shows which
 workspaces exist, what's roughly on each (by real app icons, not a generic
 placeholder), and lets you jump.
 
+Sibling project: [App Dock](https://github.com/crazybadger/omarchy-app-dock)
+— rest your cursor at the bottom screen edge for a Dock-style strip of every
+*open window* (not workspace), ordered by workspace 1-9. Same icon-resolution
+approach and overlay plugin contract as this one, different trigger and job:
+Ribbon is about workspaces, Dock is about windows.
+
 ## Install
 
 ```bash
