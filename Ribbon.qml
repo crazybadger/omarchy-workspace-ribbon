@@ -56,14 +56,26 @@ Item {
   // before falling back to the themed lookup and finally a generic icon.
   property var iconIndex: ({})
   property var _pendingIconIndex: ({})
+  property int _pendingIconCount: 0
+
+  // Bounds for the scan below: a hostile/huge/hung icon tree (network mount,
+  // symlink loop, a theme with an absurd number of sizes) must not be able to
+  // run `find` forever or grow the index without limit. Real icon themes
+  // never come close to either — hicolor/Adwaita-style layouts are 3-4 levels
+  // deep and total a few thousand files at most even with several themes
+  // installed — so these are generous ceilings, not a normal-case constraint.
+  readonly property int _iconIndexMaxDepth: 6
+  readonly property int _iconIndexMaxEntries: 20000
+  readonly property int _iconIndexTimeoutMs: 10000
 
   function iconIndexScanCommand() {
+    var depth = root._iconIndexMaxDepth
     return [
       'dirs="$HOME/.icons $HOME/.local/share/icons";',
       'IFS=":"; for d in ${XDG_DATA_DIRS:-/usr/local/share:/usr/share}; do dirs="$dirs $d/icons"; done; unset IFS;',
       'for ext in svg png; do',
       '  for base in $dirs; do',
-      '    [[ -d $base ]] && find "$base" \\( -path "*/apps/*" -o -path "*/devices/*" \\) -name "*.$ext" 2>/dev/null;',
+      '    [[ -d $base ]] && find "$base" -maxdepth ' + depth + ' \\( -path "*/apps/*" -o -path "*/devices/*" \\) -name "*.$ext" 2>/dev/null;',
       '  done;',
       '  find /usr/share/pixmaps -maxdepth 1 -name "*.$ext" 2>/dev/null;',
       'done'
@@ -71,22 +83,43 @@ Item {
   }
 
   function indexIconLine(path) {
+    if (root._pendingIconCount >= root._iconIndexMaxEntries) return
     var value = String(path || "").trim()
     if (value.length === 0) return
     var slash = value.lastIndexOf("/")
     var file = slash >= 0 ? value.slice(slash + 1) : value
     var dot = file.lastIndexOf(".")
     var name = dot > 0 ? file.slice(0, dot) : file
-    if (name.length > 0 && root._pendingIconIndex[name] === undefined)
+    if (name.length > 0 && root._pendingIconIndex[name] === undefined) {
       root._pendingIconIndex[name] = value
+      root._pendingIconCount++
+    }
   }
 
   Process {
     id: iconIndexScan
     command: ["bash", "-c", root.iconIndexScanCommand()]
     stdout: SplitParser { onRead: function(line) { root.indexIconLine(line) } }
-    onStarted: root._pendingIconIndex = ({})
-    onExited: root.iconIndex = root._pendingIconIndex
+    onStarted: {
+      root._pendingIconIndex = ({})
+      root._pendingIconCount = 0
+      iconIndexTimeout.restart()
+    }
+    onExited: {
+      iconIndexTimeout.stop()
+      root.iconIndex = root._pendingIconIndex
+    }
+  }
+
+  // Belt-and-suspenders alongside maxdepth/entry-cap above: if `find` still
+  // manages to hang (e.g. a stalled network mount under one of the scanned
+  // dirs), don't let it run forever -- kill it and use whatever was indexed
+  // so far. `running = false` terminates the process; `onExited` still fires
+  // and commits the partial index.
+  Timer {
+    id: iconIndexTimeout
+    interval: root._iconIndexTimeoutMs
+    onTriggered: if (iconIndexScan.running) iconIndexScan.running = false
   }
 
   Component.onCompleted: iconIndexScan.running = true
